@@ -14,5 +14,21 @@
   },
   "dependencies": {
     "xstream": "^11.0.0"
-  }
+  },
+  "description": "TEA (The Elm Architecture) in TypeScript",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bocodigitalmedia/tea-ts.git"
+  },
+  "keywords": [
+    "tea",
+    "elm",
+    "architecture",
+    "typescript",
+    "types"
+  ],
+  "bugs": {
+    "url": "https://github.com/bocodigitalmedia/tea-ts/issues"
+  },
+  "homepage": "https://github.com/bocodigitalmedia/tea-ts#readme"
 }
