@@ -1,8 +1,5 @@
-import { EventEmitter } from 'events'
-import { Stream } from 'xstream'
-import fromEvent from 'xstream/extra/fromEvent'
-
-const noop = () => {}
+import { Observable } from 'most'
+import { create as createObservable } from '@most/create'
 
 export type Update< Msg, State > =
   (msg: Msg) => (state: State) => State
@@ -23,9 +20,9 @@ export type Render< VNode > =
   (target: HTMLElement) => (vnode: VNode) => void
 
 export type Mounted< Msg, State, VNode > =
-  { message$: Stream< Msg >,
-    state$: Stream< State >,
-    vnode$: Stream< VNode >
+  { message$: Observable< Msg >,
+    state$: Observable< State >,
+    vnode$: Observable< VNode >
   }
 
 export type App<Msg, State, VNode> = {
@@ -47,33 +44,30 @@ export const mount = <Msg, State, VNode>
     render: Render<VNode>
   ): Mounted<Msg, State, VNode> => {
 
+  let receiveMsg = (_: Msg): void => {}
 
-  const emitter: EventEmitter = new EventEmitter()
+  const message$ = createObservable(next => {
+    receiveMsg = next
+  })
 
-  const dispatch: Dispatch<Msg> = (msg: Msg) => emitter.emit('message', msg)
+  const dispatch: Dispatch<Msg> = msg => {
+    process.nextTick(() => {
+      receiveMsg(msg)
+    })
+  }
 
-  const message$: Stream<Msg> = fromEvent(emitter, 'message')
-
-  const state$: Stream<State> =
-    message$.fold(
+  const state$ = message$
+    .scan(
       (state: State, msg: Msg) => app.update(msg)(state),
       app.init(dispatch)
     )
 
-  const vnode$: Stream<VNode> =
-    state$.map(app.view(dispatch))
+  const vnode$ = state$
+    .map((state: State) => app.view(dispatch)(state))
 
-  message$.subscribe({
-    next: app.service(dispatch),
-    error: noop,
-    complete: noop
-  })
+  message$.observe(app.service(dispatch))
 
-  vnode$.subscribe({
-    next: render(target),
-    error: noop,
-    complete: noop,
-  })
+  vnode$.observe(render(target))
 
   return {
     message$,

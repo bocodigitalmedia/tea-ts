@@ -1,7 +1,7 @@
 {
   "name": "tea-ts",
   "author": "Christian Bradley <christian.bradley@bocodigital.com>",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "license": "MIT",
@@ -13,7 +13,8 @@
     "typescript": "^2.5.3"
   },
   "dependencies": {
-    "xstream": "^11.0.0"
+    "@most/create": "^2.0.1",
+    "most": "^1.7.2"
   },
   "description": "TEA (The Elm Architecture) in TypeScript",
   "repository": {

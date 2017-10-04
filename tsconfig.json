@@ -12,10 +12,11 @@
     "noFallthroughCasesInSwitch": true,
     "outDir": "dist"
   },
-  "files": [
-    "src/index.ts"
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx"
   ],
-  "types": [
-    "xstream"
+  "exclude": [
+    "node_modules"
   ]
 }

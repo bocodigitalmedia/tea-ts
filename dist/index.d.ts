@@ -1,4 +1,4 @@
-import { Stream } from 'xstream';
+import { Observable } from 'most';
 export declare type Update<Msg, State> = (msg: Msg) => (state: State) => State;
 export declare type View<Msg, State, VNode> = (dispatch: Dispatch<Msg>) => (state: State) => VNode;
 export declare type Dispatch<Msg> = (msg: Msg) => void;
@@ -6,9 +6,9 @@ export declare type Init<Msg, State> = (dispatch: Dispatch<Msg>) => State;
 export declare type Service<Msg> = (dispatch: Dispatch<Msg>) => (msg: Msg) => void;
 export declare type Render<VNode> = (target: HTMLElement) => (vnode: VNode) => void;
 export declare type Mounted<Msg, State, VNode> = {
-    message$: Stream<Msg>;
-    state$: Stream<State>;
-    vnode$: Stream<VNode>;
+    message$: Observable<Msg>;
+    state$: Observable<State>;
+    vnode$: Observable<VNode>;
 };
 export declare type App<Msg, State, VNode> = {
     init: Init<Msg, State>;

@@ -1,24 +1,22 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-var events_1 = require("events");
-var fromEvent_1 = require("xstream/extra/fromEvent");
-var noop = function () { };
+var create_1 = require("@most/create");
 exports.mount = function (app, target, render) {
-    var emitter = new events_1.EventEmitter();
-    var dispatch = function (msg) { return emitter.emit('message', msg); };
-    var message$ = fromEvent_1.default(emitter, 'message');
-    var state$ = message$.fold(function (state, msg) { return app.update(msg)(state); }, app.init(dispatch));
-    var vnode$ = state$.map(app.view(dispatch));
-    message$.subscribe({
-        next: app.service(dispatch),
-        error: noop,
-        complete: noop
+    var receiveMsg = function (_) { };
+    var message$ = create_1.create(function (next) {
+        receiveMsg = next;
     });
-    vnode$.subscribe({
-        next: render(target),
-        error: noop,
-        complete: noop,
-    });
+    var dispatch = function (msg) {
+        process.nextTick(function () {
+            receiveMsg(msg);
+        });
+    };
+    var state$ = message$
+        .scan(function (state, msg) { return app.update(msg)(state); }, app.init(dispatch));
+    var vnode$ = state$
+        .map(function (state) { return app.view(dispatch)(state); });
+    message$.observe(app.service(dispatch));
+    vnode$.observe(render(target));
     return {
         message$: message$,
         state$: state$,
