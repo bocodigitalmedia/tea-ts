@@ -1,26 +1,24 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+var most_1 = require("most");
 var create_1 = require("@most/create");
+var setimmediate_1 = require("setimmediate");
 exports.mount = function (app, target, render) {
-    var receiveMsg = function (_) { };
-    var message$ = create_1.create(function (next) {
-        receiveMsg = next;
-    });
-    var dispatch = function (msg) {
-        process.nextTick(function () {
-            receiveMsg(msg);
-        });
-    };
-    var state$ = message$
-        .scan(function (state, msg) { return app.update(msg)(state); }, app.init(dispatch));
-    var vnode$ = state$
-        .map(function (state) { return app.view(dispatch)(state); });
-    message$.observe(app.service(dispatch));
-    vnode$.observe(render(target));
+    var receive = function (_) { };
+    var dispatch = function (msg) { return setimmediate_1.default(receive, [msg]); };
+    var observable = create_1.create(function (next) { receive = next; });
+    var messageStream = most_1.from(observable);
+    var stateStream = most_1.scan(app.update, app.init(dispatch), messageStream);
+    var vNodeStream = most_1.map(function (state) { return app.view(dispatch, state); }, stateStream);
+    var serviceStream = most_1.map(function (msg) { return app.service(dispatch, msg); }, messageStream);
+    var renderStream = most_1.map(function (vNode) { return render(vNode, target); }, vNodeStream);
     return {
-        message$: message$,
-        state$: state$,
-        vnode$: vnode$
+        dispatch: dispatch,
+        messageStream: messageStream,
+        stateStream: stateStream,
+        vNodeStream: vNodeStream,
+        serviceStream: serviceStream,
+        renderStream: renderStream
     };
 };
 //# sourceMappingURL=index.js.map

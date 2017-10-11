@@ -1,77 +1,78 @@
-import { Observable } from 'most'
+import { Observable, Stream, map, scan, from as streamFrom } from 'most'
 import { create as createObservable } from '@most/create'
+import setImmediate from 'setimmediate'
 
-export type Update< Msg, State > =
-  (msg: Msg) => (state: State) => State
-
-export type View< Msg, State, VNode > =
-  (dispatch: Dispatch< Msg >) => (state: State) => VNode
-
-export type Dispatch< Msg > =
+export type Dispatch <Msg> =
   (msg: Msg) => void
 
-export type Init< Msg, State > =
-  (dispatch: Dispatch< Msg >) => State
+export type Update <Msg, State> =
+  (state: State, msg: Msg) => State
 
-export type Service< Msg > =
-  (dispatch: Dispatch< Msg >) => (msg: Msg) => void
+export type Service <Msg, Result> =
+  (dispatch: Dispatch <Msg>, msg: Msg) => Result
 
-export type Render< VNode > =
-  (target: HTMLElement) => (vnode: VNode) => void
+export type Init <Msg, State> =
+  (dispatch: Dispatch <Msg>) => State
 
-export type Mounted< Msg, State, VNode > =
-  { message$: Observable< Msg >,
-    state$: Observable< State >,
-    vnode$: Observable< VNode >
-  }
+export type View <Msg, State, VNode> =
+  (dispatch: Dispatch <Msg>, state: State) => VNode
 
-export type App<Msg, State, VNode> = {
-  init: Init<Msg, State>,
-  service: Service<Msg>,
-  update: Update<Msg, State>,
-  view: View<Msg, State, VNode>
+export type Render <VNode, Result> =
+  (vNode: VNode, target: HTMLElement) => Result
+
+export interface App <Msg, State, ServiceResult, VNode> {
+  init: Init <Msg, State>,
+  update: Update <Msg, State>,
+  service: Service <Msg, ServiceResult>,
+  view: View <Msg, State, VNode>
 }
 
-export type MountParams<Msg, State, VNode> = {
-  app: App<Msg, State, VNode>,
-  target: HTMLElement,
-  render: Render<VNode>
+export interface AppInstance <Msg, State, ServiceResult, VNode, RenderResult> {
+  dispatch: Dispatch <Msg>,
+  messageStream: Stream <Msg>,
+  stateStream: Stream <State>,
+  serviceStream: Stream <ServiceResult>,
+  vNodeStream: Stream <VNode>,
+  renderStream: Stream <RenderResult>
 }
 
-export const mount = <Msg, State, VNode>
-  ( app: App<Msg, State, VNode>,
+export const mount =
+  <Msg, State, ServiceResult, VNode, RenderResult>
+  ( app: App <Msg, State, ServiceResult, VNode>,
     target: HTMLElement,
-    render: Render<VNode>
-  ): Mounted<Msg, State, VNode> => {
+    render: Render <VNode, RenderResult>,
+  ): AppInstance <Msg, State, ServiceResult, VNode, RenderResult> => {
 
-  let receiveMsg = (_: Msg): void => {}
+    let receive: (msg: Msg) => void =
+      _ => {}
 
-  const message$ = createObservable(next => {
-    receiveMsg = next
-  })
+    const dispatch: (msg: Msg) => void =
+      msg => setImmediate(receive, [msg])
 
-  const dispatch: Dispatch<Msg> = msg => {
-    process.nextTick(() => {
-      receiveMsg(msg)
-    })
+    const observable: Observable <Msg> =
+      createObservable(next => { receive = next })
+
+    const messageStream: Stream <Msg> =
+      streamFrom(observable)
+
+    const stateStream: Stream <State> =
+      scan(app.update, app.init(dispatch), messageStream)
+
+    const vNodeStream: Stream <VNode> =
+      map(state => app.view(dispatch, state), stateStream)
+
+    const serviceStream: Stream <ServiceResult> =
+      map(msg => app.service(dispatch, msg), messageStream)
+
+    const renderStream: Stream <RenderResult> =
+      map(vNode => render(vNode, target), vNodeStream)
+
+    return {
+      dispatch,
+      messageStream,
+      stateStream,
+      vNodeStream,
+      serviceStream,
+      renderStream
+    }
   }
-
-  const state$ = message$
-    .scan(
-      (state: State, msg: Msg) => app.update(msg)(state),
-      app.init(dispatch)
-    )
-
-  const vnode$ = state$
-    .map((state: State) => app.view(dispatch)(state))
-
-  message$.observe(app.service(dispatch))
-
-  vnode$.observe(render(target))
-
-  return {
-    message$,
-    state$,
-    vnode$
-  }
-}

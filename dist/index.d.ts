@@ -1,24 +1,22 @@
-import { Observable } from 'most';
-export declare type Update<Msg, State> = (msg: Msg) => (state: State) => State;
-export declare type View<Msg, State, VNode> = (dispatch: Dispatch<Msg>) => (state: State) => VNode;
+import { Stream } from 'most';
 export declare type Dispatch<Msg> = (msg: Msg) => void;
+export declare type Update<Msg, State> = (state: State, msg: Msg) => State;
+export declare type Service<Msg, Result> = (dispatch: Dispatch<Msg>, msg: Msg) => Result;
 export declare type Init<Msg, State> = (dispatch: Dispatch<Msg>) => State;
-export declare type Service<Msg> = (dispatch: Dispatch<Msg>) => (msg: Msg) => void;
-export declare type Render<VNode> = (target: HTMLElement) => (vnode: VNode) => void;
-export declare type Mounted<Msg, State, VNode> = {
-    message$: Observable<Msg>;
-    state$: Observable<State>;
-    vnode$: Observable<VNode>;
-};
-export declare type App<Msg, State, VNode> = {
+export declare type View<Msg, State, VNode> = (dispatch: Dispatch<Msg>, state: State) => VNode;
+export declare type Render<VNode, Result> = (vNode: VNode, target: HTMLElement) => Result;
+export interface App<Msg, State, ServiceResult, VNode> {
     init: Init<Msg, State>;
-    service: Service<Msg>;
     update: Update<Msg, State>;
+    service: Service<Msg, ServiceResult>;
     view: View<Msg, State, VNode>;
-};
-export declare type MountParams<Msg, State, VNode> = {
-    app: App<Msg, State, VNode>;
-    target: HTMLElement;
-    render: Render<VNode>;
-};
-export declare const mount: <Msg, State, VNode>(app: App<Msg, State, VNode>, target: HTMLElement, render: Render<VNode>) => Mounted<Msg, State, VNode>;
+}
+export interface AppInstance<Msg, State, ServiceResult, VNode, RenderResult> {
+    dispatch: Dispatch<Msg>;
+    messageStream: Stream<Msg>;
+    stateStream: Stream<State>;
+    serviceStream: Stream<ServiceResult>;
+    vNodeStream: Stream<VNode>;
+    renderStream: Stream<RenderResult>;
+}
+export declare const mount: <Msg, State, ServiceResult, VNode, RenderResult>(app: App<Msg, State, ServiceResult, VNode>, target: HTMLElement, render: Render<VNode, RenderResult>) => AppInstance<Msg, State, ServiceResult, VNode, RenderResult>;
