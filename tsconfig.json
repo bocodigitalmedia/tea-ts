@@ -1,26 +1,22 @@
 {
-  "compileOnSave": true,
+  "include": [
+    "src/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ],
   "compilerOptions": {
-    "target": "es5",
-    "module": "commonjs",
+    "outDir": "dist",
+    "target": "es6",
+    "module": "es6",
+    "moduleResolution": "node",
+    "pretty": true,
     "declaration": true,
     "sourceMap": true,
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noImplicitReturns": true,
-    "noImplicitAny": true,
-    "noFallthroughCasesInSwitch": true,
-    "strictNullChecks": true,
-    "noImplicitThis": true,
-    "allowSyntheticDefaultImports": true,
-    "preserveConstEnums": true,
-    "outDir": "dist"
-  },
-  "include": [
-    "src/**/*.ts"
-  ],
-  "exclude": [
-    "node_modules"
-  ]
+    "noFallthroughCasesInSwitch": true
+  }
 }
